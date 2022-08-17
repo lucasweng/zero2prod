@@ -8,6 +8,22 @@ services:
       deploy_on_push: true
     dockerfile_path: Dockerfile
     source_dir: .
+    envs:
+      - key: APP_DATABASE__USERNAME
+        value: ${newsletter.USERNAME}
+        scope: RUN_TIME
+      - key: APP_DATABASE__PASSWORD
+        value: ${newsletter.PASSWORD}
+        scope: RUN_TIME
+      - key: APP_DATABASE__HOST
+        value: ${newsletter.HOSTNAME}
+        scope: RUN_TIME
+      - key: APP_DATABASE__PORT
+        value: ${newsletter.PORT}
+        scope: RUN_TIME
+      - key: APP_DATABASE__DATABASE_NAME
+        value: ${newsletter.DATABASE}
+        scope: RUN_TIME
     instance_size_slug: basic-xxs
     instance_count: 1
     http_port: 8000
@@ -15,3 +31,8 @@ services:
       - path: /
     health_check:
       http_path: /health_check
+databases:
+  - name: newsletter
+    engine: PG
+    version: "12"
+    production: false
