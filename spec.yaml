@@ -9,6 +9,9 @@ services:
     dockerfile_path: Dockerfile
     source_dir: .
     envs:
+      - key: APP_APPLICATION__BASE_URL
+        value: ${APP_URL}
+        scope: RUN_TIME
       - key: APP_DATABASE__USERNAME
         value: ${newsletter.USERNAME}
         scope: RUN_TIME
