@@ -3,8 +3,11 @@ use crate::email_client::EmailClient;
 use crate::routes::{
     confirm, health_check, home, login, login_form, publish_newsletter, subscribe,
 };
+use actix_web::cookie::Key;
 use actix_web::dev::Server;
 use actix_web::{web, App, HttpServer};
+use actix_web_flash_messages::{storage::CookieMessageStore, FlashMessagesFramework};
+use secrecy::{ExposeSecret, Secret};
 use sqlx::postgres::PgPoolOptions;
 use sqlx::PgPool;
 use std::net::TcpListener;
@@ -39,6 +42,7 @@ impl Application {
             connection_pool,
             email_client,
             config.application.base_url,
+            config.application.hmac_secret,
         )?;
 
         Ok(Self { port, server })
@@ -70,12 +74,17 @@ fn run(
     db_pool: PgPool,
     email_client: EmailClient,
     base_url: String,
+    hmac_secret: Secret<String>,
 ) -> Result<Server, std::io::Error> {
     let db_pool = web::Data::new(db_pool);
     let email_client = web::Data::new(email_client);
     let base_url = web::Data::new(ApplicationBaseUrl(base_url));
+    let secret_key = Key::from(hmac_secret.expose_secret().as_bytes());
+    let message_storage = CookieMessageStore::builder(secret_key).build();
+    let message_framework = FlashMessagesFramework::builder(message_storage).build();
     let server = HttpServer::new(move || {
         App::new()
+            .wrap(message_framework.clone())
             .wrap(TracingLogger::default())
             .route("/health_check", web::get().to(health_check))
             .route("/subscriptions", web::post().to(subscribe))

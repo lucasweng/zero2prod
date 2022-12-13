@@ -13,7 +13,7 @@ name = "zero2prod"
 [dependencies]
 actix-web = "4"
 serde = { version = "1", features = ["derive"]}
-reqwest = { version = "0.11", default-features = false, features = ["json", "rustls-tls"] }
+reqwest = { version = "0.11", default-features = false, features = ["json", "rustls-tls", "cookies"] }
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 config = { version = "0.13", default-features = false, features = ["yaml"] }
 sqlx = { version = "0.6", default-features = false, features = ["runtime-actix-rustls", "macros", "postgres", "uuid", "time", "migrate", "offline"] }
@@ -34,6 +34,9 @@ thiserror = "1"
 anyhow = "1"
 base64 = "0.13"
 argon2 = { version = "0.4", features = ["std"] }
+urlencoding = "2"
+htmlescape = "0.3"
+actix-web-flash-messages = { version = "0.4", features = ["cookies"] }
 
 [dev-dependencies]
 once_cell = "1"
