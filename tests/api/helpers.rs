@@ -105,6 +105,18 @@ impl TestApp {
             .await
             .expect("Failed to execute request.")
     }
+
+    pub async fn get_admin_dashboard(&self) -> reqwest::Response {
+        self.api_client
+            .get(&format!("{}/admin/dashboard", &self.address))
+            .send()
+            .await
+            .expect("Failed to execute request.")
+    }
+
+    pub async fn get_admin_dashboard_html(&self) -> String {
+        self.get_admin_dashboard().await.text().await.unwrap()
+    }
 }
 
 pub async fn spawn_app() -> TestApp {
@@ -129,7 +141,9 @@ pub async fn spawn_app() -> TestApp {
     configure_database(&config.database).await;
 
     // Launch the application as a background task
-    let application = Application::build(config.clone()).expect("Failed to build application.");
+    let application = Application::build(config.clone())
+        .await
+        .expect("Failed to build application.");
     let application_port = application.port();
     let _ = tokio::spawn(application.run_until_stopped());
     let client = reqwest::Client::builder()

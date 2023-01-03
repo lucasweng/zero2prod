@@ -1,8 +1,11 @@
 use crate::configuration::{DatabaseSettings, Settings};
 use crate::email_client::EmailClient;
+use crate::routes::admin_dashboard;
 use crate::routes::{
     confirm, health_check, home, login, login_form, publish_newsletter, subscribe,
 };
+use actix_session::storage::RedisSessionStore;
+use actix_session::SessionMiddleware;
 use actix_web::cookie::Key;
 use actix_web::dev::Server;
 use actix_web::{web, App, HttpServer};
@@ -19,7 +22,7 @@ pub struct Application {
 }
 
 impl Application {
-    pub fn build(config: Settings) -> Result<Self, std::io::Error> {
+    pub async fn build(config: Settings) -> Result<Self, anyhow::Error> {
         let connection_pool = get_connection_pool(&config.database);
 
         let sender_email = config
@@ -43,7 +46,9 @@ impl Application {
             email_client,
             config.application.base_url,
             config.application.hmac_secret,
-        )?;
+            config.redis_uri,
+        )
+        .await?;
 
         Ok(Self { port, server })
     }
@@ -69,28 +74,35 @@ pub fn get_connection_pool(config: &DatabaseSettings) -> PgPool {
 // a raw `String` would expose us to conflicts.
 pub struct ApplicationBaseUrl(pub String);
 
-fn run(
+async fn run(
     listener: TcpListener,
     db_pool: PgPool,
     email_client: EmailClient,
     base_url: String,
     hmac_secret: Secret<String>,
-) -> Result<Server, std::io::Error> {
+    redis_uri: Secret<String>,
+) -> Result<Server, anyhow::Error> {
     let db_pool = web::Data::new(db_pool);
     let email_client = web::Data::new(email_client);
     let base_url = web::Data::new(ApplicationBaseUrl(base_url));
     let secret_key = Key::from(hmac_secret.expose_secret().as_bytes());
-    let message_storage = CookieMessageStore::builder(secret_key).build();
+    let message_storage = CookieMessageStore::builder(secret_key.clone()).build();
     let message_framework = FlashMessagesFramework::builder(message_storage).build();
+    let redis_store = RedisSessionStore::new(redis_uri.expose_secret()).await?;
     let server = HttpServer::new(move || {
         App::new()
             .wrap(message_framework.clone())
+            .wrap(SessionMiddleware::new(
+                redis_store.clone(),
+                secret_key.clone(),
+            ))
             .wrap(TracingLogger::default())
             .route("/health_check", web::get().to(health_check))
             .route("/subscriptions", web::post().to(subscribe))
             .route("/subscriptions/confirm", web::get().to(confirm))
             .route("/newsletters", web::post().to(publish_newsletter))
             .route("/", web::get().to(home))
+            .route("/admin/dashboard", web::get().to(admin_dashboard))
             .route("/login", web::get().to(login_form))
             .route("/login", web::post().to(login))
             .app_data(db_pool.clone())
