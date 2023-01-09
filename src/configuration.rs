@@ -12,6 +12,7 @@ pub struct Settings {
     pub database: DatabaseSettings,
     pub application: ApplicationSettings,
     pub email_client: EmailClientSettings,
+    pub redis_uri: Secret<String>,
 }
 
 #[derive(Deserialize, Clone)]
@@ -38,6 +39,7 @@ pub struct ApplicationSettings {
     pub port: u16,
     pub host: String,
     pub base_url: String,
+    pub hmac_secret: Secret<String>,
 }
 
 #[derive(Deserialize, Clone)]
@@ -85,7 +87,7 @@ pub fn get_configuration() -> Result<Settings, config::ConfigError> {
     let env_filename = format!("{}.yaml", env.as_str());
     let settings = config::Config::builder()
         .add_source(config::File::from(config_dir.join("base.yaml")))
-        .add_source(config::File::from(config_dir.join(&env_filename)))
+        .add_source(config::File::from(config_dir.join(env_filename)))
         .add_source(
             config::Environment::with_prefix("APP")
                 .prefix_separator("_")
