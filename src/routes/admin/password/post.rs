@@ -24,8 +24,8 @@ pub async fn change_password(
         return Ok(see_other("/login"));
     }
     let user_id = user_id.unwrap();
-    let new_password = form.new_password.expose_secret();
-    if new_password != form.new_password_check.expose_secret() {
+    let new_password = form.0.new_password.expose_secret();
+    if new_password != form.0.new_password_check.expose_secret() {
         FlashMessage::error(
             "You entered two different new passwords - the field values must match.",
         )
@@ -50,5 +50,9 @@ pub async fn change_password(
             AuthError::UnexpectedError(_) => Err(e500(e)),
         };
     }
-    todo!()
+    crate::authentication::change_password(user_id, form.0.new_password, &pool)
+        .await
+        .map_err(e500)?;
+    FlashMessage::error("Your password has been changed.").send();
+    Ok(see_other("/admin/password"))
 }
