@@ -107,6 +107,10 @@ jobs:
           POSTGRES_DB: postgres
         ports:
           - 5432:5432
+      redis:
+        image: redis
+        ports:
+          - 6379:6379
     env:
       SQLX_VERSION: 0.6.1
       SQLX_FEATURES: postgres,native-tls
@@ -173,6 +177,10 @@ jobs:
           POSTGRES_DB: postgres
         ports:
           - 5432:5432
+      redis:
+        image: redis
+        ports:
+          - 6379:6379
     env:
       SQLX_VERSION: 0.6.1
       SQLX_FEATURES: postgres,native-tls
