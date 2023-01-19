@@ -1,4 +1,4 @@
-use crate::helpers::{spawn_app, ConfirmationLinks, TestApp};
+use crate::helpers::{assert_is_redirect_to, spawn_app, ConfirmationLinks, TestApp};
 use wiremock::matchers::{any, method, path};
 use wiremock::{Mock, ResponseTemplate};
 
@@ -199,4 +199,13 @@ async fn invalid_password_is_rejected() {
         r#"Basic realm="publish""#,
         response.headers()["WWW-Authenticate"]
     );
+}
+
+#[tokio::test]
+async fn you_must_be_logged_in_to_see_the_newsletter_form() {
+    let app = spawn_app().await;
+
+    let response = app.get_publish_newsletter().await;
+
+    assert_is_redirect_to(&response, "/login");
 }
