@@ -244,6 +244,14 @@ impl TestUser {
         }
     }
 
+    pub async fn login(&self, app: &TestApp) -> reqwest::Response {
+        app.post_login(&serde_json::json!({
+            "username": &self.username,
+            "password": &self.password,
+        }))
+        .await
+    }
+
     async fn store(&self, pool: &PgPool) {
         let salt = argon2::password_hash::SaltString::generate(&mut rand::thread_rng());
         // Match parameters of the default password
