@@ -20,7 +20,7 @@ impl SubscriberName {
         let contains_forbidden_chars = s.chars().any(|c| forbidden_chars.contains(&c));
 
         if is_empty_or_whitespace || is_too_long || contains_forbidden_chars {
-            Err(format!("{} is not a valid subscriber name.", s))
+            Err(format!("{s} is not a valid subscriber name."))
         } else {
             Ok(Self(s))
         }
