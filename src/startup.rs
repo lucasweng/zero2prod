@@ -25,18 +25,7 @@ pub struct Application {
 impl Application {
     pub async fn build(config: Settings) -> Result<Self, anyhow::Error> {
         let connection_pool = get_connection_pool(&config.database);
-
-        let sender_email = config
-            .email_client
-            .sender()
-            .expect("Invalid sender email address.");
-        let timeout = config.email_client.timeout();
-        let email_client = EmailClient::new(
-            config.email_client.base_url,
-            sender_email,
-            config.email_client.authorization_token,
-            timeout,
-        );
+        let email_client = config.email_client.client();
 
         let address = format!("{}:{}", config.application.host, config.application.port);
         let listener = TcpListener::bind(address)?;
@@ -101,7 +90,6 @@ async fn run(
             .route("/health_check", web::get().to(health_check))
             .route("/subscriptions", web::post().to(subscribe))
             .route("/subscriptions/confirm", web::get().to(confirm))
-            .route("/newsletters", web::post().to(publish_newsletter))
             .route("/", web::get().to(home))
             .route("/login", web::get().to(login_form))
             .route("/login", web::post().to(login))
@@ -110,6 +98,7 @@ async fn run(
                     .wrap(actix_web_lab::middleware::from_fn(reject_anonymous_users))
                     .route("/dashboard", web::get().to(admin_dashboard))
                     .route("/newsletters", web::get().to(publish_newsletter_form))
+                    .route("/newsletters", web::post().to(publish_newsletter))
                     .route("/password", web::get().to(change_password_form))
                     .route("/password", web::post().to(change_password))
                     .route("/logout", web::post().to(log_out)),
